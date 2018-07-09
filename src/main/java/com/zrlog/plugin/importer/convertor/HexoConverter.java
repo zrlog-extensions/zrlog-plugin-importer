@@ -1,7 +1,6 @@
 package com.zrlog.plugin.importer.convertor;
 
 import com.hibegin.common.util.IOUtil;
-
 import com.zrlog.plugin.common.modle.CreateArticleRequest;
 import com.zrlog.plugin.importer.ParseUtil;
 import org.commonmark.Extension;
@@ -15,13 +14,15 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class HexoConverter implements ArticleConverter {
 
     private static List<Extension> extensions = Arrays.asList(TablesExtension.create(), AutolinkExtension.create());
 
-    public CreateArticleRequest parse(File file) throws FileNotFoundException {
+    public CreateArticleRequest parse(File file) throws FileNotFoundException, ParseException {
         String mdContent = IOUtil.getStringInputStream(new FileInputStream(file.toString()));
         if (mdContent.startsWith("---\n")) {
             mdContent = mdContent.substring("---\n".length());
@@ -29,9 +30,10 @@ public class HexoConverter implements ArticleConverter {
         if (mdContent.startsWith("---\r\n")) {
             mdContent = mdContent.substring("---\r\n".length());
         }
-        String[] texts = mdContent.split("---");
+        String[] texts = mdContent.split("---\n");
         if (texts.length > 1) {
             String metaInfo = texts[0].replace("\t", " ").trim();
+            String articleMd = mdContent.substring(mdContent.indexOf("---\n") + 4);
             Yaml yaml = new Yaml();
             Map<String, Object> metaInfoMap = yaml.load(metaInfo);
             CreateArticleRequest createArticleRequest = new CreateArticleRequest();
@@ -52,9 +54,17 @@ public class HexoConverter implements ArticleConverter {
                 createArticleRequest.setKeywords((String) tags);
             }
 
-            createArticleRequest.setReleaseDate((Date) metaInfoMap.get("date"));
+            if (metaInfoMap.get("date") != null) {
+                if (metaInfoMap.get("date") instanceof Date) {
+                    createArticleRequest.setReleaseDate((Date) metaInfoMap.get("date"));
+                } else if (metaInfoMap.get("date") instanceof String) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+                    createArticleRequest.setReleaseDate(sdf.parse((String) metaInfoMap.get("date")));
+                }
+            }
+
             createArticleRequest.setTitle((String) metaInfoMap.get("title"));
-            createArticleRequest.setMarkdown(texts[1].trim());
+            createArticleRequest.setMarkdown(articleMd);
             createArticleRequest.setAlias(file.getName().replace(".md", "").replace(".markdown", ""));
             createArticleRequest.setContent(renderMd(createArticleRequest.getMarkdown()));
             createArticleRequest.setThumbnail(getThumbnail(metaInfoMap));
@@ -90,8 +100,8 @@ public class HexoConverter implements ArticleConverter {
         return renderer.render(document);
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
-        new HexoConverter().parse(new File("_posts/js-memory-management-and-gc.md"));
+    public static void main(String[] args) throws Exception {
+        new HexoConverter().parse(new File("_posts/Docker.md"));
     }
 
 
