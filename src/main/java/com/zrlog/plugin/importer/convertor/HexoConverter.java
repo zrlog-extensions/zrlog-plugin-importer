@@ -1,7 +1,7 @@
 package com.zrlog.plugin.importer.convertor;
 
-import com.hibegin.common.util.IOUtil;
-import com.zrlog.plugin.common.modle.CreateArticleRequest;
+import com.zrlog.plugin.common.IOUtil;
+import com.zrlog.plugin.common.model.CreateArticleRequest;
 import com.zrlog.plugin.importer.ParseUtil;
 import org.commonmark.Extension;
 import org.commonmark.ext.autolink.AutolinkExtension;
@@ -23,7 +23,7 @@ public class HexoConverter implements ArticleConverter {
     private static List<Extension> extensions = Arrays.asList(TablesExtension.create(), AutolinkExtension.create());
 
     public CreateArticleRequest parse(File file) throws FileNotFoundException, ParseException {
-        String mdContent = IOUtil.getStringInputStream(new FileInputStream(file.toString()));
+        String mdContent = IOUtil.getStringInputStream(new FileInputStream(file));
         if (mdContent.startsWith("---\n")) {
             mdContent = mdContent.substring("---\n".length());
         }
@@ -58,7 +58,7 @@ public class HexoConverter implements ArticleConverter {
                 if (metaInfoMap.get("date") instanceof Date) {
                     createArticleRequest.setReleaseDate((Date) metaInfoMap.get("date"));
                 } else if (metaInfoMap.get("date") instanceof String) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     createArticleRequest.setReleaseDate(sdf.parse((String) metaInfoMap.get("date")));
                 }
             }

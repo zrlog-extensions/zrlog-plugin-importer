@@ -1,6 +1,7 @@
 package com.zrlog.plugin.importer.convertor;
 
-import com.zrlog.plugin.common.modle.CreateArticleRequest;
+
+import com.zrlog.plugin.common.model.CreateArticleRequest;
 
 import java.io.File;
 
