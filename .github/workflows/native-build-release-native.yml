@@ -1,4 +1,4 @@
-name: build release native
+name:  plugin release package (native)
 on:
   push:
     branches:

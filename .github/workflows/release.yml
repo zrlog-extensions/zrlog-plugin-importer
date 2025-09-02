@@ -1,4 +1,4 @@
-name: plugin release package
+name: plugin release package (jar)
 on:
   push:
     branches:
