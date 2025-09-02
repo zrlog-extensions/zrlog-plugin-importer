@@ -5,13 +5,10 @@ import com.zrlog.plugin.common.PluginNativeImageUtils;
 import com.zrlog.plugin.data.codec.HttpRequestInfo;
 import com.zrlog.plugin.importer.controller.ImporterController;
 import com.zrlog.plugin.message.Plugin;
-import com.zrlog.plugin.render.FreeMarkerRenderHandler;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class GraalvmAgentApplication {
 
@@ -30,13 +27,6 @@ public class GraalvmAgentApplication {
         PluginNativeImageUtils.usedGsonObject();
 
         //Application.nativeAgent = true;
-        Plugin plugin = new Plugin();
-        plugin.setName("test");
-        plugin.setDesc("test");
-        plugin.setVersion("test");
-        Map<String, Object> objectObjectHashMap = new HashMap<>();
-        new FreeMarkerRenderHandler().render("/templates/index", plugin, objectObjectHashMap);
-
         Application.main(args);
 
     }
