@@ -1,5 +1,6 @@
 package com.zrlog.plugin.importer.controller;
 
+import com.google.gson.Gson;
 import com.zrlog.plugin.IOSession;
 import com.zrlog.plugin.client.HttpClientUtils;
 import com.zrlog.plugin.common.IOUtil;
@@ -28,6 +29,7 @@ public class ImporterController {
     private final IOSession session;
     private final MsgPacket requestPacket;
     private final HttpRequestInfo requestInfo;
+    private final Gson gson = new Gson();
 
     public ImporterController(IOSession session, MsgPacket requestPacket, HttpRequestInfo requestInfo) {
         this.session = session;
@@ -36,13 +38,23 @@ public class ImporterController {
     }
 
     public void index() {
-        Map<String, Object> keyMap = new HashMap<>();
-        session.responseHtml("/templates/index", keyMap, requestPacket.getMethodStr(), requestPacket.getMsgId());
+        Map<String, Object> data = new HashMap<>();
+        data.put("theme", isDarkMode() ? "dark" : "light");
+        data.put("data", gson.toJson(pageData()));
+        session.responseHtml("/templates/index", data, requestPacket.getMethodStr(), requestPacket.getMsgId());
 
     }
 
+    public void json() {
+        response(pageData());
+    }
+
     public void doImport() throws IOException {
-        String source = requestInfo.getParam().get("source")[0];
+        String source = stringValue(params().get("source"));
+        if (source.trim().isEmpty()) {
+            response(errorMap("请先上传 zip 文件"));
+            return;
+        }
         File tmpPath = new File(PathKit.getTmpPath() + "/" + UUID.randomUUID() + "/");
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put("Cookie", requestInfo.getHeader().get("Cookie"));
@@ -73,6 +85,59 @@ public class ImporterController {
         for (CreateArticleRequest request : createArticleRequestList) {
             session.getResponseSync(ContentType.JSON, request, ActionType.CREATE_ARTICLE, HashMap.class);
         }
-        session.sendJsonMsg(new HashMap<>(), requestPacket.getMethodStr(), requestPacket.getMsgId(), MsgPacketStatus.RESPONSE_SUCCESS);
+        Map<String, Object> data = new HashMap<>();
+        data.put("count", createArticleRequestList.size());
+        response(successMap(data));
+    }
+
+    private Map<String, Object> pageData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("dark", isDarkMode());
+        data.put("colorPrimary", getAdminColorPrimary());
+        data.put("plugin", session.getPlugin());
+        return successMap(data);
+    }
+
+    private Map<String, Object> params() {
+        if (requestInfo.getParam() == null) {
+            return new HashMap<>();
+        }
+        return requestInfo.simpleParam();
+    }
+
+    private Map<String, Object> successMap(Object data) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("success", true);
+        map.put("data", data);
+        return map;
+    }
+
+    private Map<String, Object> errorMap(String message) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("success", false);
+        map.put("message", message);
+        return map;
+    }
+
+    private void response(Map<String, Object> map) {
+        session.sendMsg(ContentType.JSON, map, requestPacket.getMethodStr(), requestPacket.getMsgId(), MsgPacketStatus.RESPONSE_SUCCESS);
+    }
+
+    private String stringValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof List && !((List<?>) value).isEmpty()) {
+            return String.valueOf(((List<?>) value).get(0));
+        }
+        return String.valueOf(value);
+    }
+
+    private boolean isDarkMode() {
+        return requestInfo.isDarkMode();
+    }
+
+    private String getAdminColorPrimary() {
+        return requestInfo.getAdminColorPrimary();
     }
 }

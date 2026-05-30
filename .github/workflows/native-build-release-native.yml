@@ -1,24 +1,24 @@
-name:  plugin release package (native)
+name: build release native
 on:
   push:
     branches:
       - main
 jobs:
   build:
-    name: Plugin on ${{ matrix.os }}
+    name: plugin relase package ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ ubuntu-22.04,ubuntu-24.04-arm,macos-13,macos-14,windows-2022 ]
+        os: [ ubuntu-22.04,ubuntu-24.04-arm,macos-15-intel,macos-14,windows-2022 ]
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '21'
-          distribution: 'graalvm' # See 'Options' for all available distributions
+          java-version: '25'
+          distribution: 'graalvm'
           cache: 'maven'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'

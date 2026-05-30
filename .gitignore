@@ -19,3 +19,7 @@ server/plugin.txt
 *.lck
 tmp
 log
+node_modules/
+*.tsbuildinfo
+src/main/frontend/build
+src/main/resources/templates
