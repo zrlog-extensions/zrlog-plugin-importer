@@ -57,6 +57,15 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
 
     return (
         <div style={shellStyle}>
+            <style>
+                {`
+                    body {
+                        background: ${token.colorBgLayout};
+                        color: ${token.colorText};
+                        color-scheme: ${data.dark ? "dark" : "light"};
+                    }
+                `}
+            </style>
             {contextHolder}
             <Space direction="vertical" size={20} style={{width: "100%"}}>
                 <Space direction="vertical" size={4}>
