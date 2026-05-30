@@ -7,7 +7,7 @@ import com.hibegin.common.util.http.handle.HttpFileHandle;
 import com.zrlog.plugin.IOSession;
 import com.zrlog.plugin.common.LoggerUtil;
 import com.zrlog.plugin.common.PathKit;
-import com.zrlog.plugin.common.modle.CreateArticleRequest;
+import com.zrlog.plugin.common.model.CreateArticleRequest;
 import com.zrlog.plugin.data.codec.ContentType;
 import com.zrlog.plugin.data.codec.HttpRequestInfo;
 import com.zrlog.plugin.data.codec.MsgPacket;

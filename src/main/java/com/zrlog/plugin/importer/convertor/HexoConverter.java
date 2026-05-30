@@ -1,7 +1,7 @@
 package com.zrlog.plugin.importer.convertor;
 
 import com.hibegin.common.util.IOUtil;
-import com.zrlog.plugin.common.modle.CreateArticleRequest;
+import com.zrlog.plugin.common.model.CreateArticleRequest;
 import com.zrlog.plugin.importer.ParseUtil;
 import org.commonmark.Extension;
 import org.commonmark.ext.autolink.AutolinkExtension;
