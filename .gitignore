@@ -1,9 +1,6 @@
-/bin
-
 .idea
 **/logs
 *.pid
-*.jar
 *.iml
 **/target
 **/temp/**
