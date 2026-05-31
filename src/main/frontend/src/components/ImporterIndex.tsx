@@ -20,8 +20,6 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
         margin: "0 auto",
         padding: 24,
         color: token.colorText,
-        background: token.colorBgLayout,
-        minHeight: "100vh",
         boxSizing: "border-box" as const,
     }), [token]);
 
@@ -57,15 +55,6 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
 
     return (
         <div style={shellStyle}>
-            <style>
-                {`
-                    body {
-                        background: ${token.colorBgLayout};
-                        color: ${token.colorText};
-                        color-scheme: ${data.dark ? "dark" : "light"};
-                    }
-                `}
-            </style>
             {contextHolder}
             <Space direction="vertical" size={20} style={{width: "100%"}}>
                 <Space direction="vertical" size={4}>
