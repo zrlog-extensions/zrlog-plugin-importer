@@ -1,5 +1,7 @@
 package com.zrlog.plugin.importer;
 
+import com.zrlog.plugin.RunConstants;
+import com.zrlog.plugin.type.RunType;
 import com.zrlog.plugin.common.PluginNativeImageUtils;
 import com.zrlog.plugin.importer.controller.ImporterController;
 
@@ -11,6 +13,7 @@ public class GraalvmAgentApplication {
 
 
     public static void main(String[] args) throws IOException {
+        RunConstants.runType = RunType.AGENT;
         String basePath = System.getProperty("user.dir").replace("\\target","").replace("/target", "");
         //PathKit.setRootPath(basePath);
         File file = new File(basePath + "/src/main/resources");
