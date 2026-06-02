@@ -1,4 +1,4 @@
-import {Button, Space, Typography, Upload, message, theme} from "antd";
+import {Button, Grid, Space, Typography, Upload, message, theme} from "antd";
 import {InboxOutlined, ImportOutlined} from "@ant-design/icons";
 import axios from "axios";
 import {FunctionComponent, useMemo, useState} from "react";
@@ -10,6 +10,9 @@ type ImporterIndexProps = {
 
 const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
     const {token} = theme.useToken();
+    const screens = Grid.useBreakpoint();
+    const isPhone = Boolean(screens.xs && !screens.sm);
+    const isCompact = !screens.md;
     const [source, setSource] = useState("");
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
@@ -18,17 +21,17 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
     const shellStyle = useMemo(() => ({
         maxWidth: 980,
         margin: "0 auto",
-        padding: 24,
+        padding: isPhone ? 12 : isCompact ? 16 : 24,
         color: token.colorText,
         boxSizing: "border-box" as const,
-    }), [token]);
+    }), [isCompact, isPhone, token]);
 
     const panelStyle = useMemo(() => ({
-        padding: 24,
+        padding: isPhone ? 16 : 24,
         border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: 8,
         background: token.colorBgContainer,
-    }), [token]);
+    }), [isPhone, token]);
 
     const runImport = async () => {
         if (!source) {
@@ -58,8 +61,8 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
             {contextHolder}
             <Space direction="vertical" size={20} style={{width: "100%"}}>
                 <Space direction="vertical" size={4}>
-                    <Typography.Title level={3} style={{margin: 0}}>{data.plugin.name}</Typography.Title>
-                    <Typography.Text type="secondary">{data.plugin.desc}</Typography.Text>
+                    <Typography.Title level={3} style={{margin: 0, fontSize: isPhone ? 20 : undefined}}>{data.plugin.name}</Typography.Title>
+                    <Typography.Text type="secondary" style={{display: "block", maxWidth: "100%"}}>{data.plugin.desc}</Typography.Text>
                 </Space>
 
                 <div style={panelStyle}>
@@ -102,6 +105,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
                             onClick={runImport}
                             loading={importing}
                             disabled={!source || uploading}
+                            style={isPhone ? {width: "100%"} : undefined}
                         >
                             导入
                         </Button>
