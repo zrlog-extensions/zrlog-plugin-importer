@@ -1,32 +1,36 @@
 package com.zrlog.plugin.importer;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 public class ZipUtil {
     public static void unZip(String src, String target) throws IOException {
-        ZipEntry in;
-        if (!target.endsWith("/")) {
-            target = target + "/";
+        File targetDir = new File(target).getCanonicalFile();
+        if (!targetDir.exists() && !targetDir.mkdirs()) {
+            throw new IOException("Create unzip target folder failed: " + targetDir);
         }
-        try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(src)); ZipFile zip = new ZipFile(src)) {
-            //FIXME zip 文件不能有中文
-            while ((in = zipIn.getNextEntry()) != null) {
-                File file = new File(target + in.getName());
-                if (in.getName().endsWith("/")) {
-                    file.mkdirs();
-                } else {
-                    if (!new File(file.getParent()).exists()) {
-                        new File(file.getParent()).mkdirs();
+        try (ZipFile zip = new ZipFile(src)) {
+            for (ZipEntry entry : Collections.list(zip.entries())) {
+                File file = new File(targetDir, entry.getName()).getCanonicalFile();
+                if (!file.toPath().startsWith(targetDir.toPath())) {
+                    throw new IOException("Unsafe zip entry: " + entry.getName());
+                }
+                if (entry.isDirectory()) {
+                    if (!file.exists() && !file.mkdirs()) {
+                        throw new IOException("Create unzip folder failed: " + file);
                     }
-                    try (FileOutputStream fout = new FileOutputStream(file)) {
-                        zip.getInputStream(in).transferTo(fout);
-                    }
+                    continue;
+                }
+                File parent = file.getParentFile();
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    throw new IOException("Create unzip folder failed: " + parent);
+                }
+                try (FileOutputStream fout = new FileOutputStream(file)) {
+                    zip.getInputStream(entry).transferTo(fout);
                 }
             }
         }
