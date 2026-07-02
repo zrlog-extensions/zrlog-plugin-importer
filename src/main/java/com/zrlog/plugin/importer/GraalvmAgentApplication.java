@@ -3,10 +3,15 @@ package com.zrlog.plugin.importer;
 import com.zrlog.plugin.RunConstants;
 import com.zrlog.plugin.type.RunType;
 import com.zrlog.plugin.common.PluginNativeImageUtils;
+import com.zrlog.plugin.importer.controller.ImporterApiResponse;
 import com.zrlog.plugin.importer.controller.ImporterController;
+import com.zrlog.plugin.importer.controller.ImporterImportResponse;
+import com.zrlog.plugin.importer.controller.ImporterPageData;
+import com.zrlog.plugin.importer.controller.ImporterRequestParams;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class GraalvmAgentApplication {
@@ -21,6 +26,8 @@ public class GraalvmAgentApplication {
         //Application.nativeAgent = true;
         PluginNativeImageUtils.exposeController(Collections.singletonList(ImporterController.class));
         PluginNativeImageUtils.usedGsonObject();
+        PluginNativeImageUtils.gsonNativeAgentByClazz(Arrays.asList(ImporterApiResponse.class,
+                ImporterImportResponse.class, ImporterPageData.class, ImporterRequestParams.class));
         Application.main(args);
 
     }

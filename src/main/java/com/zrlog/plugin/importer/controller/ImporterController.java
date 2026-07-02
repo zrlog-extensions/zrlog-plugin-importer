@@ -50,9 +50,9 @@ public class ImporterController {
     }
 
     public void doImport() throws IOException {
-        String source = stringValue(params().get("source"));
+        String source = params().getSource();
         if (source.trim().isEmpty()) {
-            response(errorMap("请先上传 zip 文件"));
+            response(ImporterApiResponse.error("请先上传 zip 文件"));
             return;
         }
         File tmpPath = new File(PathKit.getTmpPath() + "/" + UUID.randomUUID() + "/");
@@ -83,54 +83,32 @@ public class ImporterController {
         }
         createArticleRequestList.sort(Comparator.comparingLong(o -> o.getReleaseDate().getTime()));
         for (CreateArticleRequest request : createArticleRequestList) {
-            session.getResponseSync(ContentType.JSON, request, ActionType.CREATE_ARTICLE, HashMap.class);
+            session.getResponseSync(ContentType.JSON, request, ActionType.CREATE_ARTICLE, Object.class);
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("count", createArticleRequestList.size());
-        response(successMap(data));
+        response(ImporterApiResponse.success(new ImporterImportResponse(createArticleRequestList.size())));
     }
 
-    private Map<String, Object> pageData() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("dark", isDarkMode());
-        data.put("colorPrimary", getAdminColorPrimary());
-        data.put("plugin", session.getPlugin());
-        return successMap(data);
+    private ImporterApiResponse<ImporterPageData> pageData() {
+        ImporterPageData data = new ImporterPageData();
+        data.setDark(isDarkMode());
+        data.setColorPrimary(getAdminColorPrimary());
+        data.setPlugin(session.getPlugin());
+        return ImporterApiResponse.success(data);
     }
 
-    private Map<String, Object> params() {
-        if (requestInfo.getParam() == null) {
-            return new HashMap<>();
-        }
-        return requestInfo.simpleParam();
+    private ImporterRequestParams params() {
+        return ImporterRequestParams.of(paramValue("source"));
     }
 
-    private Map<String, Object> successMap(Object data) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("success", true);
-        map.put("data", data);
-        return map;
+    private void response(ImporterApiResponse<?> response) {
+        session.sendMsg(ContentType.JSON, response, requestPacket.getMethodStr(), requestPacket.getMsgId(), MsgPacketStatus.RESPONSE_SUCCESS);
     }
 
-    private Map<String, Object> errorMap(String message) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("success", false);
-        map.put("message", message);
-        return map;
-    }
-
-    private void response(Map<String, Object> map) {
-        session.sendMsg(ContentType.JSON, map, requestPacket.getMethodStr(), requestPacket.getMsgId(), MsgPacketStatus.RESPONSE_SUCCESS);
-    }
-
-    private String stringValue(Object value) {
-        if (value == null) {
+    private String paramValue(String key) {
+        if (requestInfo.getParam() == null || requestInfo.getParam().get(key) == null || requestInfo.getParam().get(key).length == 0) {
             return "";
         }
-        if (value instanceof List && !((List<?>) value).isEmpty()) {
-            return String.valueOf(((List<?>) value).get(0));
-        }
-        return String.valueOf(value);
+        return requestInfo.getParam().get(key)[0];
     }
 
     private boolean isDarkMode() {
