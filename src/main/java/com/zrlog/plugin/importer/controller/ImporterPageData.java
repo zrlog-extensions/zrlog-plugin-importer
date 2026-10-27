@@ -4,6 +4,12 @@ import com.zrlog.plugin.message.Plugin;
 
 public class ImporterPageData {
 
+    private String contextPath;
+
+    public String getContextPath() { return contextPath; }
+
+    public void setContextPath(String contextPath) { this.contextPath = contextPath; }
+
     private boolean dark;
     private String colorPrimary;
     private Plugin plugin;

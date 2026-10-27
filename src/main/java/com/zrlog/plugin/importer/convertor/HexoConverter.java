@@ -13,7 +13,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -22,8 +22,11 @@ public class HexoConverter implements ArticleConverter {
 
     private static List<Extension> extensions = Arrays.asList(TablesExtension.create(), AutolinkExtension.create());
 
-    public CreateArticleRequest parse(File file) throws FileNotFoundException, ParseException {
-        String mdContent = IOUtil.getStringInputStream(new FileInputStream(file));
+    public CreateArticleRequest parse(File file) throws IOException, ParseException {
+        String mdContent;
+        try (FileInputStream input = new FileInputStream(file)) {
+            mdContent = IOUtil.getStringInputStream(input).replace("\r\n", "\n");
+        }
         if (mdContent.startsWith("---\n")) {
             mdContent = mdContent.substring("---\n".length());
         }
@@ -38,7 +41,7 @@ public class HexoConverter implements ArticleConverter {
             Map<String, Object> metaInfoMap = yaml.load(metaInfo);
             CreateArticleRequest createArticleRequest = new CreateArticleRequest();
             Object categories = metaInfoMap.get("categories");
-            if (categories instanceof List) {
+            if (categories instanceof List && !((List<?>) categories).isEmpty()) {
                 createArticleRequest.setType(((List) categories).get(0).toString());
             } else if (categories instanceof String) {
                 createArticleRequest.setType(categories.toString());
@@ -63,6 +66,9 @@ public class HexoConverter implements ArticleConverter {
                 }
             }
 
+            if (createArticleRequest.getReleaseDate() == null) {
+                throw new ParseException("文章缺少发布时间：" + file.getName(), 0);
+            }
             createArticleRequest.setTitle((String) metaInfoMap.get("title"));
             createArticleRequest.setMarkdown(articleMd);
             createArticleRequest.setAlias(file.getName().replace(".md", "").replace(".markdown", ""));

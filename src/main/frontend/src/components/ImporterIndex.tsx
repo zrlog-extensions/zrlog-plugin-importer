@@ -1,6 +1,8 @@
-import {Button, Grid, Space, Typography, Upload, message, theme} from "antd";
+import {Button, Grid, Space, Typography, Alert, message, theme} from "antd";
 import {InboxOutlined, ImportOutlined} from "@ant-design/icons";
 import axios from "axios";
+import {ResourceDragger} from "@zrlog/ui/resources";
+import ImporterResourcePicker from "./ImporterResourcePicker";
 import {FunctionComponent, useMemo, useState} from "react";
 import {ImporterInfoResponse, StandardResponse} from "../index";
 
@@ -14,6 +16,8 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
     const isPhone = Boolean(screens.xs && !screens.sm);
     const isCompact = !screens.md;
     const [source, setSource] = useState("");
+    const [sourceName, setSourceName] = useState("");
+    const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
@@ -39,6 +43,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
             return;
         }
         setImporting(true);
+        setError("");
         try {
             const {data: response} = await axios.post<StandardResponse<{ count: number }>>(
                 "doImport",
@@ -50,7 +55,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
             }
             messageApi.success(`已导入 ${response.data.count || 0} 篇文章`);
         } catch (e) {
-            messageApi.error(e instanceof Error ? e.message : "导入失败");
+            setError(e instanceof Error ? e.message : "导入失败");
         } finally {
             setImporting(false);
         }
@@ -67,37 +72,52 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
 
                 <div style={panelStyle}>
                     <Space direction="vertical" size={20} style={{width: "100%"}}>
-                        <Upload.Dragger
-                            name="file"
+                        <ResourceDragger
                             accept="application/zip,.zip"
-                            maxCount={1}
-                            showUploadList={source ? {showRemoveIcon: false} : true}
-                            action="../upload?ext=zip"
-                            disabled={uploading || importing}
-                            onChange={({file}) => {
-                                setUploading(file.status === "uploading");
-                                if (file.status === "done") {
-                                    const response = file.response || {};
-                                    const url = response.url || response.data?.url || "";
-                                    if (url) {
-                                        setSource(url);
-                                        messageApi.success("上传成功");
-                                    } else {
-                                        messageApi.error("上传响应缺少文件地址");
-                                    }
+                            disabled={importing}
+                            cardStyle={{width: "100%"}}
+                            height={180}
+                            onUploadingChange={setUploading}
+                            beforeUpload={(file) => {
+                                if (!file.name.toLowerCase().endsWith(".zip")) {
+                                    setError("请选择 ZIP 文件");
+                                    return false;
                                 }
-                                if (file.status === "error") {
-                                    setUploading(false);
-                                    messageApi.error("上传失败");
+                                if (file.size > 64 * 1024 * 1024) {
+                                    setError("ZIP 文件不能超过 64 MiB");
+                                    return false;
                                 }
+                                setError("");
+                                return true;
+                            }}
+                            upload={async (file, {signal, onProgress}) => {
+                                const form = new FormData();
+                                form.append("file", file);
+                                const {data: result} = await axios.post(
+                                    `${data.contextPath}/api/admin/upload?dir=hexo&temporary=true`, form,
+                                    {signal, onUploadProgress: ({loaded, total}) => {
+                                        if (total) onProgress(loaded / total * 100);
+                                    }},
+                                );
+                                if (!result.data?.url || result.error || result.success === false) {
+                                    throw new Error(result.message || "上传失败");
+                                }
+                                return {url: result.data.url, name: file.name};
+                            }}
+                            onSuccess={(resource) => {setSource(resource.url); setSourceName(resource.name || resource.url);}}
+                            onError={(reason) => setError(reason.message)}
+                            resourcePicker={{
+                                title: "选择 ZIP 文件", buttonText: "从资源库选择",
+                                render: (close) => <ImporterResourcePicker contextPath={data.contextPath}
+                                    onSelect={(entry) => {setSource(entry.path); setSourceName(entry.name); setError(""); close();}}/>,
                             }}
                         >
-                            <p className="ant-upload-drag-icon">
-                                <InboxOutlined/>
-                            </p>
-                            <p className="ant-upload-text">上传 Hexo Markdown zip 文件</p>
-                            <p className="ant-upload-hint">导入会按文章发布时间顺序写入 ZrLog</p>
-                        </Upload.Dragger>
+                            <p className="ant-upload-drag-icon"><InboxOutlined/></p>
+                            <p className="ant-upload-text">上传 Hexo Markdown ZIP 文件</p>
+                            <p className="ant-upload-hint">支持打包 _posts 文件夹，最大 64 MiB</p>
+                        </ResourceDragger>
+                        {sourceName && <Typography.Text style={{overflowWrap: "anywhere"}}>已选择：{sourceName}</Typography.Text>}
+                        {error && <Alert type="error" showIcon title={error}/>}
 
                         <Button
                             type="primary"

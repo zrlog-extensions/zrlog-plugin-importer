@@ -25,6 +25,7 @@ export interface Plugin {
 }
 
 export interface ImporterInfoResponse {
+    contextPath: string;
     dark: boolean;
     colorPrimary?: string;
     plugin: Plugin;
