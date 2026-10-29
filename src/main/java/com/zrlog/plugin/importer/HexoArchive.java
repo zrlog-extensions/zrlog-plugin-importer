@@ -27,7 +27,9 @@ public final class HexoArchive {
                     if (article == null) continue;
                     if (article.getType() == null || article.getType().isEmpty()) article.setType("未分类");
                     articles.add(article);
-                } catch (ParseException | RuntimeException e) {
+                } catch (ParseException e) {
+                    throw new IOException("无法读取文章：" + path.getFileName() + "（" + e.getMessage() + "）", e);
+                } catch (RuntimeException e) {
                     throw new IOException("无法读取文章：" + path.getFileName(), e);
                 }
             }
