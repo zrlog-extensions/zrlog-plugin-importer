@@ -14,6 +14,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -57,17 +58,22 @@ public class HexoConverter implements ArticleConverter {
                 createArticleRequest.setKeywords((String) tags);
             }
 
-            if (metaInfoMap.get("date") != null) {
-                if (metaInfoMap.get("date") instanceof Date) {
-                    createArticleRequest.setReleaseDate((Date) metaInfoMap.get("date"));
-                } else if (metaInfoMap.get("date") instanceof String) {
+            Object date = metaInfoMap.get("date");
+            if (date == null || (date instanceof String && ((String) date).trim().isEmpty())) {
+                createArticleRequest.setReleaseDate(new Date(Files.getLastModifiedTime(file.toPath()).toMillis()));
+            } else if (date instanceof Date) {
+                createArticleRequest.setReleaseDate((Date) date);
+            } else if (date instanceof String) {
+                try {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    createArticleRequest.setReleaseDate(sdf.parse((String) metaInfoMap.get("date")));
+                    createArticleRequest.setReleaseDate(sdf.parse((String) date));
+                } catch (ParseException e) {
+                    ParseException error = new ParseException("date 不是有效的日期", e.getErrorOffset());
+                    error.initCause(e);
+                    throw error;
                 }
-            }
-
-            if (createArticleRequest.getReleaseDate() == null) {
-                throw new ParseException("文章缺少发布时间：" + file.getName(), 0);
+            } else {
+                throw new ParseException("date 必须为日期字符串", 0);
             }
             createArticleRequest.setTitle((String) metaInfoMap.get("title"));
             createArticleRequest.setMarkdown(articleMd);

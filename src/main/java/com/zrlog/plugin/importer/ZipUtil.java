@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.util.Collections;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -45,6 +47,10 @@ public class ZipUtil {
                         }
                         fout.write(buffer, 0, read);
                     }
+                }
+                FileTime modified = entry.getLastModifiedTime();
+                if (modified != null) {
+                    Files.setLastModifiedTime(file.toPath(), modified);
                 }
             }
         }

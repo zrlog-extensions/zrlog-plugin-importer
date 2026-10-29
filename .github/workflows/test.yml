@@ -21,6 +21,12 @@ jobs:
           cache: maven
       - name: Test archive parsing and shared HTTP transport
         run: ./mvnw -B -ntp test dependency:build-classpath -Dmdep.outputFile=target/test-classpath.txt -DincludeScope=test
+      - name: Verify Native archive parsing with production resource metadata
+        run: |
+          classpath="target/test-classes:target/classes:$(cat target/test-classpath.txt)"
+          native-image --no-fallback -cp "$classpath" -o target/native-hexo-archive \
+            com.zrlog.plugin.importer.HexoArchiveTest
+          target/native-hexo-archive
       - name: Collect metadata for the transport fixture
         run: |
           classpath="target/test-classes:target/classes:$(cat target/test-classpath.txt)"
