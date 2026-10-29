@@ -86,7 +86,7 @@ public class ImporterController {
     private AdminResourceSource resourceSource() throws IOException, InterruptedException {
         PublicInfo host = session.getResponseSync(ContentType.JSON, Collections.emptyMap(), ActionType.LOAD_PUBLIC_INFO, PublicInfo.class);
         if (host == null || host.getApiHomeUrl() == null) throw new IOException("无法读取站点资源地址");
-        return new AdminResourceSource(host.getApiHomeUrl());
+        return new AdminResourceSource(host.getApiHomeUrl(), session);
     }
 
     private ImporterApiResponse<ImporterPageData> pageData() throws IOException, InterruptedException {
