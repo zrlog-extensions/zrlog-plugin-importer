@@ -2,9 +2,6 @@ package com.zrlog.plugin.importer;
 
 import com.zrlog.plugin.IOSession;
 import com.zrlog.plugin.client.HttpClientUtils;
-import com.zrlog.plugin.common.type.HttpMethod;
-import com.zrlog.plugin.data.codec.BaseHttpRequestInfo;
-import com.zrlog.plugin.data.codec.HttpResponseInfo;
 
 import java.io.IOException;
 import java.net.URI;
@@ -57,9 +54,6 @@ public final class AdminResourceSource {
         boolean complete = false;
         try {
             URI url = resolve(source);
-            BaseHttpRequestInfo request = new BaseHttpRequestInfo();
-            request.setAccessUrl(url.toString());
-            request.setHttpMethod(HttpMethod.GET);
             Map<String, String> headers = new LinkedHashMap<>();
             if (url.getPath().equals(contextPath() + "/api/admin/upload/resource") && credentials != null) {
                 credentials.forEach((key, value) -> {
@@ -68,23 +62,8 @@ public final class AdminResourceSource {
                     }
                 });
             }
-            request.setHeader(headers);
-            HttpResponseInfo response;
-            try {
-                response = HttpClientUtils.sendHttpRequest(request, session, Duration.ofSeconds(70));
-            } catch (RuntimeException e) {
-                throw new IOException("资源下载失败，请重试", e);
-            }
-            if (response == null || response.getResponseBody() == null) {
-                throw new IOException("资源下载失败，未收到文件内容");
-            }
-            if (response.getStatusCode() != 200) {
-                throw new IOException("资源下载失败（HTTP " + response.getStatusCode() + "）");
-            }
-            if (response.getResponseBody().length > MAX_ARCHIVE_BYTES) {
-                throw new IOException("ZIP 文件不能超过 64 MiB");
-            }
-            Files.write(destination, response.getResponseBody());
+            HttpClientUtils.downloadToFile(url.toString(), destination, MAX_ARCHIVE_BYTES,
+                    headers, session, Duration.ofMinutes(11));
             complete = true;
         } finally {
             if (!complete) Files.deleteIfExists(destination);

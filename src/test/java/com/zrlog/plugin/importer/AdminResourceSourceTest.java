@@ -62,7 +62,8 @@ public class AdminResourceSourceTest {
 
     @Test public void downloadsBinaryThroughSharedHttpMethodAndScopesCredentialsToPrivateResources() throws Exception {
         // Includes invalid UTF-8: a ZIP must never be decoded as text or parsed as JSON.
-        byte[] archive = {0x50, 0x4b, 3, 4, 0, (byte) 0xff, (byte) 0x80, (byte) 0xc3};
+        byte[] archive = new byte[5 * 1024 * 1024];
+        archive[0] = 0x50; archive[1] = 0x4b; archive[archive.length - 1] = (byte) 0xff;
         try (SharedHttpSession host = new SharedHttpSession(200, archive)) {
             var source = new AdminResourceSource("http://host.invalid/blog/", host.session);
             var target = temporary.newFile().toPath();
@@ -71,6 +72,8 @@ public class AdminResourceSourceTest {
             assertArrayEquals(archive, Files.readAllBytes(target));
             BaseHttpRequestInfo request = host.requests.get(0);
             assertEquals(HttpMethod.GET, request.getHttpMethod());
+            assertTrue(request.isResponseBodyAsFile());
+            assertEquals(Long.valueOf(64L * 1024 * 1024), request.getMaxResponseBodyBytes());
             assertEquals("http://host.invalid/blog/api/admin/upload/resource?path=%2Fadmin%2Fattached%2Ftmp%2Fa.zip", request.getAccessUrl());
             assertEquals(Map.of("cookie", "private", "AUTHORIZATION", "Bearer private"), request.getHeader());
             source.download("/blog/attached/public.zip", Map.of("Cookie", "private", "Authorization", "private"), target);
@@ -113,6 +116,7 @@ public class AdminResourceSourceTest {
         private final IOSession session;
         private final List<BaseHttpRequestInfo> requests = new ArrayList<>();
         private final HttpResponseInfo response = new HttpResponseInfo();
+        private final List<java.nio.file.Path> files = new ArrayList<>();
 
         private SharedHttpSession(int status, byte[] body) throws IOException {
             response.setStatusCode(status);
@@ -126,8 +130,20 @@ public class AdminResourceSourceTest {
                     assertEquals(ActionType.HTTP_METHOD.name(), packet.getMethodStr());
                     assertEquals(MsgPacketStatus.SEND_REQUEST, packet.getStatus());
                     requests.add(new Gson().fromJson(packet.getDataStr(), BaseHttpRequestInfo.class));
-                    session.dispose(new MsgPacket(response, ContentType.JSON, MsgPacketStatus.RESPONSE_SUCCESS,
-                            packet.getMsgId(), packet.getMethodStr()));
+                    if (response.getStatusCode() == 200 && response.getResponseBody() != null) {
+                        try {
+                            var file = Files.createTempFile("hexo-http-fixture-", ".zip");
+                            files.add(file);
+                            Files.write(file, response.getResponseBody());
+                            session.dispose(new MsgPacket(file.toFile(), ContentType.FILE, MsgPacketStatus.RESPONSE_SUCCESS,
+                                    packet.getMsgId(), packet.getMethodStr()));
+                        } catch (IOException e) {
+                            throw new java.io.UncheckedIOException(e);
+                        }
+                    } else {
+                        session.dispose(new MsgPacket(response, ContentType.JSON, MsgPacketStatus.RESPONSE_SUCCESS,
+                                packet.getMsgId(), packet.getMethodStr()));
+                    }
                 }
             };
             session = new IOSession(receiver, selector, new SocketCodec(transport, new SocketDecode(Runnable::run)),
@@ -139,6 +155,7 @@ public class AdminResourceSourceTest {
             sender.close();
             server.close();
             selector.close();
+            for (var file : files) Files.deleteIfExists(file);
         }
     }
 }
