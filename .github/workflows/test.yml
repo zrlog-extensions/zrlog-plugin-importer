@@ -1,0 +1,35 @@
+name: Test shared HTTP downloads
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: maven
+      - name: Test archive parsing and shared HTTP transport
+        run: ./mvnw -B -ntp test dependency:build-classpath -Dmdep.outputFile=target/test-classpath.txt -DincludeScope=test
+      - name: Collect metadata for the transport fixture
+        run: |
+          classpath="target/test-classes:target/classes:$(cat target/test-classpath.txt)"
+          java -agentlib:native-image-agent=config-output-dir=target/native-http-agent \
+            -cp "$classpath" com.zrlog.plugin.importer.AdminResourceSourceTest
+      - name: Verify Native download without URL protocol flags
+        run: |
+          classpath="target/test-classes:target/classes:$(cat target/test-classpath.txt)"
+          native-image --no-fallback -H:ConfigurationFileDirectories=target/native-http-agent \
+            -cp "$classpath" -o target/native-http-download \
+            com.zrlog.plugin.importer.AdminResourceSourceTest
+          target/native-http-download
