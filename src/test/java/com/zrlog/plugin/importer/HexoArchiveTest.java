@@ -51,10 +51,11 @@ public class HexoArchiveTest {
     }
 
     @Test public void acceptsWindowsNewlinesAndEmptyCategories() throws Exception {
-        Path zip = archive("_posts/post.md", "---\r\ntitle: Test\r\ndate: 2026-10-27 12:00:00\r\ncategories: []\r\n---\r\nBody");
+        Path zip = archive("_posts/post.md", "---\r\ntitle: Test\r\ndate: 2026-10-27 12:00:00\r\ncategories: []\r\n---\r\nBody &copy;");
         var articles = HexoArchive.read(zip, temporary.newFolder().toPath());
         assertEquals(1, articles.size());
         assertEquals("未分类", articles.get(0).getType());
+        assertTrue(articles.get(0).getContent().contains("Body ©"));
     }
 
     @Test public void rejectsZipTraversalAndExpansionBeyondPerFileLimit() throws Exception {
