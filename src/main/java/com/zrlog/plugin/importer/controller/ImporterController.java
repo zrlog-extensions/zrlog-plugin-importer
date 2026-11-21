@@ -1,6 +1,7 @@
 package com.zrlog.plugin.importer.controller;
 
 import com.google.gson.Gson;
+import com.zrlog.plugin.data.codec.PluginAppearance;
 import com.zrlog.plugin.IOSession;
 import com.zrlog.plugin.importer.AdminResourceSource;
 import com.zrlog.plugin.importer.HexoArchive;
@@ -93,6 +94,7 @@ public class ImporterController {
         ImporterPageData data = new ImporterPageData();
         data.setContextPath(resourceSource().contextPath());
         data.setDark(isDarkMode());
+        data.setAppearance(PluginAppearance.from(requestInfo));
         data.setColorPrimary(getAdminColorPrimary());
         data.setPlugin(session.getPlugin());
         return ImporterApiResponse.success(data);

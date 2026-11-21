@@ -1,5 +1,8 @@
-import {Button, Grid, Space, Typography, Alert, message, theme} from "antd";
-import {InboxOutlined, ImportOutlined} from "@ant-design/icons";
+import {Alert, Button, Grid, Space, theme} from "antd";
+import Typography from "@zrlog/ui/antd/Typography";
+import InboxIcon from "@zrlog/ui/icons/inbox";
+import UploadIcon from "@zrlog/ui/icons/upload";
+import {useUiMessage} from "@zrlog/ui/feedback";
 import axios from "axios";
 import {ResourceDragger} from "@zrlog/ui/resources";
 import ImporterResourcePicker from "./ImporterResourcePicker";
@@ -20,7 +23,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
     const [error, setError] = useState("");
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
-    const [messageApi, contextHolder] = message.useMessage();
+    const [messageApi, contextHolder] = useUiMessage();
 
     const shellStyle = useMemo(() => ({
         maxWidth: 980,
@@ -33,7 +36,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
     const panelStyle = useMemo(() => ({
         padding: isPhone ? 16 : 24,
         border: `1px solid ${token.colorBorderSecondary}`,
-        borderRadius: 8,
+        borderRadius: token.borderRadiusLG,
         background: token.colorBgContainer,
     }), [isPhone, token]);
 
@@ -112,7 +115,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
                                     onSelect={(entry) => {setSource(entry.path); setSourceName(entry.name); setError(""); close();}}/>,
                             }}
                         >
-                            <p className="ant-upload-drag-icon"><InboxOutlined/></p>
+                            <p className="ant-upload-drag-icon"><InboxIcon/></p>
                             <p className="ant-upload-text">上传 Hexo Markdown ZIP 文件</p>
                             <p className="ant-upload-hint">支持打包 _posts 文件夹，最大 64 MiB</p>
                         </ResourceDragger>
@@ -121,7 +124,7 @@ const ImporterIndex: FunctionComponent<ImporterIndexProps> = ({data}) => {
 
                         <Button
                             type="primary"
-                            icon={<ImportOutlined/>}
+                            icon={<UploadIcon/>}
                             onClick={runImport}
                             loading={importing}
                             disabled={!source || uploading}
